@@ -49,3 +49,7 @@ Content-Type: application/json
   "active": 3000,
   "deaths": 104
 }
+###
+
+GET http://localhost:3000/states/30/stats/
+Authorization: Berear eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNocmlzdG9waGVyX3BoaWxsaXBzIiwiaWF0IjoxNjc5NTY4Mzc1fQ.GBC5x-vpXpbxWQ6jo9CVZVMoSg-jgLNywVTPCu_6Iek

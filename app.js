@@ -160,23 +160,52 @@ app.delete("/districts/:distId/", authenticateToken, async (req, res) => {
 });
 
 // Updating district details using distId
-app.put("/districts/distId", authenticateToken, async (req, res) => {
+app.put("/districts/:distId", authenticateToken, async (req, res) => {
   try {
     const districtId = req.params.distId;
     const { districtName, stateId, cases, cured, active, deaths } = req.body;
-    const updateDistQuery = `UPDATE district SET
-    district_name = '${districtName}',
-    state_id = ${stateId},
-    cases = ${cases},
-    cured = ${cured},
-    active = ${active},
-    deaths = ${deaths}
-    WHERE district_id = ${districtId};`;
-    await db.run(updateDistQuery);
+    const updateDistQuery = `UPDATE district SET district_name = ?,
+                                                 state_id = ?,
+                                                 cases = ?,
+                                                 cured = ?,
+                                                 active = ?,
+                                                 deaths = ?
+                             WHERE district_id = ?;`;
+    await db.run(updateDistQuery, [
+      districtName,
+      stateId,
+      cases,
+      cured,
+      active,
+      deaths,
+      districtId,
+    ]);
     res.send("District Details Updated");
   } catch (error) {
     console.log(error.message);
+    res.status(500).send("Internal Server Error");
   }
+});
+
+// {
+//   "totalCases": 724355,
+//   "totalCured": 615324,
+//   "totalActive": 99254,
+//   "totalDeaths": 9777
+// }
+
+app.get("/states/:stateId/stats/", authenticateToken, async (req, res) => {
+  const { stateId } = req.params;
+  const getStatsQuery = `
+    SELECT SUM(cases) AS totalCases,
+    SUM(cured) AS totalCured,
+    SUM(active) AS totalActive,
+    SUM(deaths) AS totalDeaths 
+    FROM state JOIN district ON state.state_id = district.state_id 
+    WHERE state.state_id = ${stateId};`;
+
+  const stats = await db.get(getStatsQuery);
+  res.send([stats][0]);
 });
 
 // exporting app method
