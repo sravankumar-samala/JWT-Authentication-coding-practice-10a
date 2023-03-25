@@ -75,8 +75,8 @@ app.post("/login/", async (req, res) => {
     const { username, password } = req.body;
 
     // check if user already exists
-    const getUserQuery = `SELECT * FROM user WHERE username = '${username}';`;
-    const userFound = await db.get(getUserQuery);
+    const getUserQuery = `SELECT * FROM user WHERE username = ?;`;
+    const userFound = await db.get(getUserQuery, username);
 
     if (!userFound) {
       res.status(400);
@@ -110,27 +110,29 @@ app.get("/states/", authenticateToken, async (req, res) => {
 app.get("/states/:Id", authenticateToken, async (req, res) => {
   const stateId = req.params.Id;
   const getStatesQuery = `
-  SELECT * FROM state WHERE state_id = ${stateId} ORDER BY state_id;`;
-  const stateObj = await db.get(getStatesQuery);
+  SELECT * FROM state WHERE state_id = ? ORDER BY state_id;`;
+  const stateObj = await db.get(getStatesQuery, stateId);
   [stateObj].forEach((obj) => res.send(convertStatePromToRespObj(obj)));
 });
 
 // Creating new district obj using post method
 app.post("/districts/", authenticateToken, async (req, res) => {
   const { districtName, stateId, cases, cured, active, deaths } = req.body;
-  const getDistrictQuery = `SELECT * FROM district WHERE district_name = '${districtName}';`;
-  const districtFound = await db.get(getDistrictQuery);
+  const getDistrictQuery = `SELECT * FROM district WHERE district_name = ?;`;
+  const districtFound = await db.get(getDistrictQuery, districtName);
 
   if (!districtFound) {
     const addDistrictQuery = `INSERT INTO district
         (district_name, state_id, cases, cured, active, deaths)
-        VALUES ('${districtName}',
-                '${stateId}',
-                '${cases}',
-                '${cured}',
-                '${active}',
-                '${deaths}');`;
-    await db.run(addDistrictQuery);
+        VALUES (?, ?, ?, ?, ?, ?);`;
+    await db.run(addDistrictQuery, [
+      districtName,
+      stateId,
+      cases,
+      cured,
+      active,
+      deaths,
+    ]);
     //   res.send(`District Successfully Added name: ${districtName}`);
     res.send("District Successfully Added");
   } else {
@@ -142,8 +144,8 @@ app.post("/districts/", authenticateToken, async (req, res) => {
 // Get district based on district Id
 app.get("/districts/:distId", authenticateToken, async (req, res) => {
   const districtId = req.params.distId;
-  const getDistQuery = `SELECT * FROM district WHERE district_id = ${districtId};`;
-  const distObj = await db.get(getDistQuery);
+  const getDistQuery = `SELECT * FROM district WHERE district_id = ?;`;
+  const distObj = await db.get(getDistQuery, districtId);
   if (distObj) {
     [distObj].forEach((obj) => res.send(convertDistPromToRespObj(obj)));
   } else {
@@ -202,9 +204,9 @@ app.get("/states/:stateId/stats/", authenticateToken, async (req, res) => {
     SUM(active) AS totalActive,
     SUM(deaths) AS totalDeaths 
     FROM state JOIN district ON state.state_id = district.state_id 
-    WHERE state.state_id = ${stateId};`;
+    WHERE state.state_id = ?;`;
 
-  const stats = await db.get(getStatsQuery);
+  const stats = await db.get(getStatsQuery, stateId);
   res.send([stats][0]);
 });
 
